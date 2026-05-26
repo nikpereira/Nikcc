@@ -350,7 +350,7 @@ function toast(msg,d=2500){const t=document.getElementById('toast');t.textConten
 function gotoPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById('page-'+name).classList.add('on');document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('active',['live','escalations','reports','agents','kb','history'][i]===name));if(name==='reports')loadReports();if(name==='agents')loadAgents();if(name==='history')loadHistory();if(name==='kb')loadKBDocs();}
 function fmtDur(s){if(!s)return'0:00';const m=Math.floor(s/60);return `${m}:${String(s%60).padStart(2,'0')}`;}
 
-async function doLogin(){
+async async function doLogin(){
   const email=document.getElementById('lemail').value.trim();
   const pass=document.getElementById('lpass').value;
   const err=document.getElementById('lerr');err.classList.remove('on');
