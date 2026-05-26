@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>CXeller8 — Supervisor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#090704;--s1:#16120e;--s2:#1e1812;--s3:#262016;--bd:#2e2218;
+      --tx:#ede9e1;--mt:#6b6560;--ac:#f97316;--acb:rgba(249,115,22,.12);
+      --gn:#2d9e6b;--gnb:rgba(45,158,107,.12);--yw:#d4a017;--ywb:rgba(212,160,23,.12);
+      --rd:#e05555;--rdb:rgba(224,85,85,.1);--bl:#4a8fc4;--blb:rgba(74,143,196,.1)
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    /* Header */
+    header{background:linear-gradient(135deg,#090704 50%,#1f0900);border-bottom:1px solid var(--bd);padding:0 1.75rem;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .logo{font-family:'DM Serif Display',serif;font-size:1.15rem;letter-spacing:-.01em}.logo span{color:var(--ac);font-weight:800}
+    .sup-badge{background:var(--acb);color:var(--ac);border:1px solid rgba(249,115,22,.25);border-radius:100px;padding:.22rem .75rem;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+    /* Nav */
+    .nav{display:flex;border-bottom:1px solid var(--bd);background:var(--s1);padding:0 1.75rem;flex-shrink:0}
+    .ntab{padding:.65rem .9rem;font-size:.72rem;font-weight:500;color:var(--mt);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;text-transform:uppercase;letter-spacing:.07em}
+    .ntab.active{color:var(--tx);border-bottom-color:var(--ac)}
+    .nbadge{background:var(--ac);color:white;font-size:.58rem;padding:.08rem .38rem;border-radius:100px;margin-left:.3rem}
+    /* Pages */
+    .page{display:none;flex:1;overflow-y:auto}.page.on{display:block}
+    .page::-webkit-scrollbar{width:5px}.page::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+    .pinner{padding:1.5rem 1.75rem}
+    /* KPIs */
+    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:.85rem;margin-bottom:1.75rem}
+    .kpi{background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:1rem 1.15rem}
+    .kv{font-family:'DM Serif Display',serif;font-size:1.75rem;line-height:1;margin-bottom:.2rem}
+    .kv.ac{color:var(--ac)}.kv.gn{color:var(--gn)}.kv.yw{color:var(--yw)}
+    .klbl{font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.08em}
+    /* Grid */
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+    .card{background:var(--s1);border:1px solid var(--bd);border-radius:4px;overflow:hidden}
+    .card-hdr{padding:.85rem 1.15rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mt)}
+    .badge{background:var(--ac);color:white;font-size:.58rem;padding:.1rem .4rem;border-radius:100px}
+    .gnbadge{background:var(--gnb);color:var(--gn);font-size:.62rem;padding:.1rem .5rem;border-radius:100px}
+    /* Live items */
+    .empty{text-align:center;padding:1.5rem;color:var(--mt);font-size:.78rem}
+    .lcitem{padding:.75rem 1.15rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:.65rem}
+    .lcitem:last-child{border-bottom:none}
+    .ldot{width:7px;height:7px;background:var(--ac);border-radius:50%;flex-shrink:0;animation:pd 1.2s ease infinite}
+    @keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+    .lcnm{font-size:.82rem;font-weight:500;flex:1}
+    .lcsub{font-size:.65rem;color:var(--mt)}
+    .qitem{padding:.75rem 1.15rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:.65rem}
+    .qitem:last-child{border-bottom:none}
+    .qpos{width:22px;height:22px;background:var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:600;color:var(--mt);flex-shrink:0}
+    /* Tables */
+    .tbl{width:100%;border-collapse:collapse}
+    .tbl th{font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mt);padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bd)}
+    .tbl td{padding:.65rem .75rem;font-size:.78rem;border-bottom:1px solid var(--bd)}
+    .tbl tr:last-child td{border-bottom:none}
+    .tbl tr:hover td{background:var(--s2)}
+    .st-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:.4rem}
+    .st-dot.available{background:var(--gn)}.st-dot.busy{background:var(--yw)}.st-dot.offline{background:var(--mt)}
+    /* Buttons */
+    .del-btn{padding:.25rem .6rem;background:var(--rdb);color:var(--rd);border:1px solid rgba(224,85,85,.25);border-radius:100px;font-size:.65rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .add-btn{padding:.38rem .85rem;background:var(--acb);color:var(--ac);border:1px solid rgba(249,115,22,.25);border-radius:100px;font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+    /* Escalation */
+    .escitem{background:var(--s2);border:1px solid rgba(212,160,23,.35);border-radius:3px;padding:.85rem 1rem;margin-bottom:.65rem}
+    .escbadge{font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--yw);margin-bottom:.45rem;display:flex;align-items:center;gap:.35rem}
+    .escpdot{width:6px;height:6px;background:var(--yw);border-radius:50%;animation:pd .8s ease infinite}
+    .escnm{font-size:.9rem;font-weight:500;margin-bottom:.15rem}
+    .escsub{font-size:.72rem;color:var(--mt);margin-bottom:.65rem}
+    .escacc{padding:.45rem .85rem;background:var(--yw);color:var(--bg);border:none;border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer}
+    /* Sup call */
+    #sup-call-sec{display:none;background:var(--s2);border:1px solid rgba(249,115,22,.35);border-radius:4px;padding:1.15rem;margin-bottom:1.25rem}
+    /* Modal */
+    #add-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:2rem}
+    #add-modal.on{display:flex}
+    .modal-card{background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:2rem;width:100%;max-width:380px}
+    .modal-title{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:1.25rem}
+    input[type=text],input[type=email],input[type=password]{width:100%;padding:.72rem 1rem;background:var(--bg);border:1px solid var(--bd);border-radius:3px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;margin-bottom:1rem;transition:border-color .2s}
+    input:focus{border-color:var(--ac)}input::placeholder{color:var(--mt)}
+    textarea{width:100%;padding:.72rem 1rem;background:var(--bg);border:1px solid var(--bd);border-radius:3px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;resize:vertical;min-height:72px}
+    textarea:focus{border-color:var(--ac)}textarea::placeholder{color:var(--mt)}
+    .lbl{display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mt);margin-bottom:.4rem}
+    .mbtn{width:100%;padding:.75rem;background:var(--ac);color:white;border:none;border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer;margin-top:.25rem}
+    .mcancel{width:100%;padding:.65rem;background:transparent;border:1px solid var(--bd);border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--mt);cursor:pointer;margin-top:.5rem}
+    .merr{background:var(--rdb);border:1px solid rgba(224,85,85,.3);border-radius:3px;padding:.4rem .75rem;font-size:.75rem;color:var(--rd);margin-bottom:.75rem;display:none}
+    .merr.on{display:block}
+    /* KB */
+    .kbitem{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.15rem;border-bottom:1px solid var(--bd)}
+    .kbitem:last-child{border-bottom:none}
+    .kbtag{background:var(--acb);color:var(--ac);font-size:.6rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;flex-shrink:0}
+    /* Toast */
+    #toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:.55rem 1.1rem;font-size:.78rem;color:var(--tx);opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+    #toast.on{opacity:1}
+    /* Progress */
+    #kb-progress{display:none;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:.82rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    audio{display:none}
+  </style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <div class="logo">CXeller<span>8</span></div>
+    <div class="sup-badge">Supervisor</div>
+  </div>
+  <div style="font-size:.75rem;color:var(--mt)" id="sup-name">Loading...</div>
+</header>
+
+<div class="nav">
+  <div class="ntab active" onclick="gotoPage('live')">Live</div>
+  <div class="ntab" onclick="gotoPage('escalations')">⚡ Escalations<span class="nbadge" id="esc-cnt" style="display:none">0</span></div>
+  <div class="ntab" onclick="gotoPage('agents')">Agents</div>
+  <div class="ntab" onclick="gotoPage('kb')">Knowledge Base</div>
+</div>
+
+<!-- LIVE PAGE -->
+<div class="page on" id="page-live">
+  <div class="pinner">
+    <div class="kpis">
+      <div class="kpi"><div class="kv gn" id="k-calls">0</div><div class="klbl">Calls Today</div></div>
+      <div class="kpi"><div class="kv" id="k-avg">0:00</div><div class="klbl">Avg Duration</div></div>
+      <div class="kpi"><div class="kv yw" id="k-queue">0</div><div class="klbl">In Queue</div></div>
+      <div class="kpi"><div class="kv ac" id="k-agents">0</div><div class="klbl">Online Agents</div></div>
+      <div class="kpi"><div class="kv" id="k-rating">—</div><div class="klbl">Avg Rating</div></div>
+    </div>
+    <div id="sup-call-sec">
+      <div style="display:flex;align-items:center;gap:.4rem;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);margin-bottom:.6rem"><span style="width:7px;height:7px;background:var(--ac);border-radius:50%;animation:pd 1s ease infinite;display:inline-block"></span> You are on an escalation call</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:.85rem" id="sup-call-nm">Customer</div>
+      <button onclick="endSupCall()" style="padding:.55rem 1rem;background:var(--rdb);color:var(--rd);border:1px solid rgba(224,85,85,.25);border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer">End Call</button>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Live Calls</div><span class="badge" id="lc-cnt">0</span></div>
+        <div id="live-calls-list"><div class="empty">No active calls</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Queue</div><span class="badge" id="q-cnt">0</span></div>
+        <div id="queue-list"><div class="empty">Queue is empty</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Agent Status</div><span class="gnbadge" id="agents-online">0 online</span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr><th>Agent</th><th>Status</th><th>On Call With</th></tr></thead>
+        <tbody id="live-agents-tbody"><tr><td colspan="3" class="empty">No agents online</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ESCALATIONS PAGE -->
+<div class="page" id="page-escalations">
+  <div class="pinner">
+    <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:1.25rem">Escalations</div>
+    <div id="esc-incoming"><div class="empty">No pending escalations</div></div>
+  </div>
+</div>
+
+<!-- AGENTS PAGE -->
+<div class="page" id="page-agents">
+  <div class="pinner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">Agent Management</div>
+      <button class="add-btn" onclick="openAddAgent()">+ Add Agent</button>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Auto-Record</th><th>Actions</th></tr></thead>
+        <tbody id="agents-tbody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KB PAGE -->
+<div class="page" id="page-kb">
+  <div class="pinner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">Knowledge Base</div>
+        <div style="font-size:.75rem;color:var(--mt);margin-top:.2rem">Documents that power Nikki's answers</div>
+      </div>
+      <label style="padding:.4rem .9rem;background:var(--acb);color:var(--ac);border:1px solid rgba(249,115,22,.25);border-radius:100px;font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;display:flex;align-items:center;gap:.4rem" for="kb-upload">
+        ↑ Upload Document
+      </label>
+      <input type="file" id="kb-upload" style="display:none" accept=".pdf,.docx,.doc,.txt" onchange="uploadDoc(this)"/>
+    </div>
+    <div id="kb-progress">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div style="width:18px;height:18px;border:2px solid var(--ac);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>
+        <span id="kb-progress-text">Uploading...</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Ingested Documents</div><span class="badge" id="kb-cnt">0</span></div>
+      <div id="kb-list"><div class="empty">No documents yet. Upload a PDF, DOCX, or TXT.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Agent Modal -->
+<div id="add-modal">
+  <div class="modal-card">
+    <div class="modal-title">Add New Agent</div>
+    <div class="merr" id="merr"></div>
+    <label class="lbl">Full Name</label>
+    <input type="text" id="m-name" placeholder="Jane Smith"/>
+    <label class="lbl">Email</label>
+    <input type="email" id="m-email" placeholder="jane@company.com"/>
+    <label class="lbl">Password</label>
+    <input type="password" id="m-pass" placeholder="Min 6 characters"/>
+    <button class="mbtn" onclick="addAgent()">Create Agent</button>
+    <button class="mcancel" onclick="closeAddAgent()">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<audio id="sup-audio" autoplay playsinline></audio>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let token = null;
+let liveState = { agents: [], queue: [], activeCalls: [] };
+let pendingEscalations = [];
+let supPc = null, supStream = null, supCallId = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function toast(msg, d) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), d || 2500);
+}
+
+function fmtDur(s) {
+  if (!s) return '0:00';
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+
+function gotoPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById('page-' + name).classList.add('on');
+  document.querySelectorAll('.ntab').forEach((t,i) => {
+    t.classList.toggle('active', ['live','escalations','agents','kb'][i] === name);
+  });
+  if (name === 'agents') loadAgents();
+  if (name === 'kb') loadKBDocs();
+}
+
+function api(path, opts) {
+  opts = opts || {};
+  return fetch(path, Object.assign({}, opts, {
+    headers: Object.assign({ 'Authorization': 'Bearer ' + (token||''), 'Content-Type': 'application/json' }, opts.headers || {})
+  })).then(r => r.json());
+}
+
+// ── Auto-login ────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'supervisor@cxeller8.com', password: 'supervisor123' })
+    });
+    const text = await r.text();
+    const data = JSON.parse(text);
+    if (data && data.token) {
+      token = data.token;
+      document.getElementById('sup-name').textContent = (data.user && data.user.name) ? data.user.name : 'Supervisor';
+    }
+  } catch(e) {
+    console.warn('Auto-login failed:', e.message);
+    document.getElementById('sup-name').textContent = 'Supervisor';
+  }
+  // Connect socket regardless
+  socket.emit('supervisor-join', { token: token || '' });
+  // Load initial data
+  refreshKPIs();
+  setInterval(refreshKPIs, 30000);
+  // Refresh live state every 5s
+  setInterval(renderLive, 5000);
+}
+
+async function refreshKPIs() {
+  try {
+    const d = await api('/api/supervisor/overview');
+    if (d && d.today) {
+      document.getElementById('k-calls').textContent = d.today.total_calls || 0;
+      document.getElementById('k-avg').textContent = fmtDur(Math.round(d.today.avg_duration || 0));
+      document.getElementById('k-rating').textContent = d.today.avg_rating > 0 ? Number(d.today.avg_rating).toFixed(1) : '—';
+    }
+  } catch(e) {}
+}
+
+// ── Live state ────────────────────────────────────────────────────────────────
+function renderLive() {
+  const { agents, queue, activeCalls } = liveState;
+  const online = agents.filter(a => a.status !== 'offline');
+  document.getElementById('k-queue').textContent = queue.length;
+  document.getElementById('k-agents').textContent = online.length;
+  document.getElementById('agents-online').textContent = online.length + ' online';
+
+  // Live calls
+  document.getElementById('lc-cnt').textContent = activeCalls.length;
+  const lc = document.getElementById('live-calls-list');
+  if (!activeCalls.length) { lc.innerHTML = '<div class="empty">No active calls</div>'; }
+  else {
+    lc.innerHTML = activeCalls.map(c => {
+      const agentName = (agents.find(a => a.socketId === c.agentId) || {}).name || 'Agent';
+      const dur = Math.round((Date.now() - c.startTime) / 1000);
+      return '<div class="lcitem"><span class="ldot"></span><div style="flex:1"><div class="lcnm">' + c.customerName + '</div><div class="lcsub">' + agentName + ' · ' + fmtDur(dur) + (c.onHold ? ' · On Hold' : '') + '</div></div></div>';
+    }).join('');
+  }
+
+  // Queue
+  document.getElementById('q-cnt').textContent = queue.length;
+  const ql = document.getElementById('queue-list');
+  if (!queue.length) { ql.innerHTML = '<div class="empty">Queue is empty</div>'; }
+  else {
+    ql.innerHTML = queue.map((c,i) => {
+      const w = Math.round((Date.now() - c.waitingSince) / 1000);
+      return '<div class="qitem"><div class="qpos">' + (i+1) + '</div><div style="flex:1"><div style="font-size:.82rem;font-weight:500">' + c.name + '</div><div style="font-size:.65rem;color:var(--mt)">Waiting ' + w + 's</div></div></div>';
+    }).join('');
+  }
+
+  // Agent table
+  const tb = document.getElementById('live-agents-tbody');
+  if (!online.length) { tb.innerHTML = '<tr><td colspan="3" class="empty">No agents online</td></tr>'; }
+  else {
+    tb.innerHTML = online.map(a => {
+      const call = activeCalls.find(c => c.agentId === a.socketId);
+      return '<tr><td>' + a.name + '</td><td><span class="st-dot ' + a.status + '"></span>' + a.status + '</td><td style="font-size:.72rem;color:var(--mt)">' + (call ? call.customerName : '—') + '</td></tr>';
+    }).join('');
+  }
+}
+
+// ── Escalations ───────────────────────────────────────────────────────────────
+function renderEscalations() {
+  const cnt = pendingEscalations.length;
+  const el = document.getElementById('esc-cnt');
+  el.style.display = cnt > 0 ? 'inline' : 'none';
+  el.textContent = cnt;
+  const inc = document.getElementById('esc-incoming');
+  if (!pendingEscalations.length) { inc.innerHTML = '<div class="empty">No pending escalations</div>'; return; }
+  inc.innerHTML = pendingEscalations.map(e =>
+    '<div class="escitem">' +
+    '<div class="escbadge"><span class="escpdot"></span> From ' + e.agentName + '</div>' +
+    '<div class="escnm">' + e.customerName + '</div>' +
+    '<div class="escsub">' + (e.reason || 'No reason provided') + '</div>' +
+    '<button class="escacc" onclick="acceptEsc(\'' + e.escalationId + '\',\'' + e.callId + '\',\'' + e.customerId + '\',\'' + e.customerName + '\')">Accept Call</button>' +
+    '</div>'
+  ).join('');
+}
+
+async function acceptEsc(escId, callId, custId, custNm) {
+  socket.emit('supervisor-accept-escalation', { escalationId: escId, callId });
+  pendingEscalations = pendingEscalations.filter(e => e.escalationId !== escId);
+  renderEscalations();
+}
+
+// ── Agents ────────────────────────────────────────────────────────────────────
+async function loadAgents() {
+  try {
+    const agents = await api('/api/supervisor/agents');
+    const tb = document.getElementById('agents-tbody');
+    if (!agents || !agents.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">No agents yet</td></tr>'; return; }
+    const liveMap = {};
+    liveState.agents.forEach(a => { liveMap[a.id] = a; });
+    tb.innerHTML = agents.map(a => {
+      const live = liveMap[a.id];
+      const status = live ? live.status : 'offline';
+      const ar = a.auto_record === 1 || a.auto_record === '1';
+      return '<tr>' +
+        '<td>' + a.name + '</td>' +
+        '<td style="color:var(--mt)">' + a.email + '</td>' +
+        '<td><span class="st-dot ' + status + '"></span>' + status + '</td>' +
+        '<td><label style="display:flex;align-items:center;gap:.4rem;cursor:pointer">' +
+        '<input type="checkbox" ' + (ar ? 'checked' : '') + ' onchange="toggleAutoRecord(\'' + a.id + '\',this.checked)" style="accent-color:var(--ac);width:14px;height:14px;cursor:pointer"/>' +
+        '<span style="font-size:.7rem;color:' + (ar ? 'var(--ac)' : 'var(--mt)') + '">' + (ar ? 'On' : 'Off') + '</span></label></td>' +
+        '<td><button class="del-btn" onclick="deleteAgent(\'' + a.id + '\',\'' + a.name + '\')">Remove</button></td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) { console.error('loadAgents:', e); }
+}
+
+function openAddAgent() { document.getElementById('add-modal').classList.add('on'); document.getElementById('merr').classList.remove('on'); }
+function closeAddAgent() { document.getElementById('add-modal').classList.remove('on'); ['m-name','m-email','m-pass'].forEach(id => document.getElementById(id).value = ''); }
+
+async function addAgent() {
+  const name = document.getElementById('m-name').value.trim();
+  const email = document.getElementById('m-email').value.trim();
+  const pass = document.getElementById('m-pass').value;
+  const err = document.getElementById('merr');
+  err.classList.remove('on');
+  if (!name || !email || !pass) { err.textContent = 'All fields required'; err.classList.add('on'); return; }
+  if (pass.length < 6) { err.textContent = 'Password must be 6+ chars'; err.classList.add('on'); return; }
+  try {
+    const r = await api('/api/supervisor/agents', { method: 'POST', body: JSON.stringify({ name, email, password: pass }) });
+    if (r.error) { err.textContent = r.error; err.classList.add('on'); return; }
+    toast(name + ' added'); closeAddAgent(); loadAgents();
+  } catch(e) { err.textContent = 'Server error'; err.classList.add('on'); }
+}
+
+async function deleteAgent(id, name) {
+  if (!confirm('Remove ' + name + '?')) return;
+  try { await api('/api/supervisor/agents/' + id, { method: 'DELETE' }); toast(name + ' removed'); loadAgents(); }
+  catch(e) { toast('Error removing agent'); }
+}
+
+async function toggleAutoRecord(id, enabled) {
+  try { await api('/api/supervisor/agents/' + id + '/autorecord', { method: 'PUT', body: JSON.stringify({ enabled }) }); toast('Auto-record ' + (enabled ? 'enabled' : 'disabled')); }
+  catch(e) { toast('Failed to update'); }
+}
+
+// ── Knowledge Base ────────────────────────────────────────────────────────────
+async function loadKBDocs() {
+  try {
+    const docs = await api('/api/kb/documents');
+    const list = document.getElementById('kb-list');
+    document.getElementById('kb-cnt').textContent = docs ? docs.length : 0;
+    if (!docs || !docs.length) { list.innerHTML = '<div class="empty">No documents yet.</div>'; return; }
+    list.innerHTML = docs.map(d => {
+      const t = new Date(d.uploaded_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return '<div class="kbitem">' +
+        '<div style="display:flex;align-items:center;gap:.75rem">' +
+        '<span class="kbtag">' + d.file_type.toUpperCase() + '</span>' +
+        '<div><div style="font-size:.82rem;font-weight:500">' + d.name + '</div>' +
+        '<div style="font-size:.65rem;color:var(--mt)">' + d.chunk_count + ' chunks · ' + t + '</div></div></div>' +
+        '<button class="del-btn" onclick="deleteDoc(\'' + d.id + '\',\'' + d.name + '\')">Remove</button>' +
+        '</div>';
+    }).join('');
+  } catch(e) { console.error('loadKBDocs:', e); }
+}
+
+async function uploadDoc(input) {
+  const file = input.files[0]; if (!file) return;
+  const prog = document.getElementById('kb-progress');
+  prog.style.display = 'block';
+  document.getElementById('kb-progress-text').textContent = 'Uploading "' + file.name + '"...';
+  try {
+    const fd = new FormData(); fd.append('file', file);
+    const r = await fetch('/api/kb/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (token||'') }, body: fd });
+    const data = await r.json();
+    if (r.ok) {
+      document.getElementById('kb-progress-text').textContent = '"' + data.name + '" uploaded (' + data.chunks + ' chunks). Embedding in background...';
+      setTimeout(() => { prog.style.display = 'none'; loadKBDocs(); }, 3000);
+    } else {
+      document.getElementById('kb-progress-text').textContent = 'Error: ' + data.error;
+      setTimeout(() => { prog.style.display = 'none'; }, 4000);
+    }
+  } catch(e) {
+    document.getElementById('kb-progress-text').textContent = 'Upload failed';
+    setTimeout(() => { prog.style.display = 'none'; }, 3000);
+  }
+  input.value = '';
+}
+
+async function deleteDoc(id, name) {
+  if (!confirm('Remove "' + name + '"?')) return;
+  try { await api('/api/kb/documents/' + id, { method: 'DELETE' }); toast(name + ' removed'); loadKBDocs(); }
+  catch(e) { toast('Error'); }
+}
+
+// ── Supervisor WebRTC ─────────────────────────────────────────────────────────
+async function startSupCall(customerId, customerName) {
+  try { supStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e) { toast('Mic required'); return; }
+  supPc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  supStream.getTracks().forEach(t => supPc.addTrack(t, supStream));
+  supPc.ontrack = e => { document.getElementById('sup-audio').srcObject = e.streams[0]; };
+  supPc.onicecandidate = e => { if (e.candidate) socket.emit('webrtc-ice', { to: customerId, candidate: e.candidate }); };
+  document.getElementById('sup-call-nm').textContent = customerName;
+  document.getElementById('sup-call-sec').style.display = 'block';
+}
+
+function endSupCall() {
+  if (supPc) { supPc.close(); supPc = null; }
+  if (supStream) { supStream.getTracks().forEach(t => t.stop()); supStream = null; }
+  document.getElementById('sup-audio').srcObject = null;
+  document.getElementById('sup-call-sec').style.display = 'none';
+  supCallId = null;
+}
+
+// ── Socket ────────────────────────────────────────────────────────────────────
+const socket = io();
+
+socket.on('connect', () => { console.log('Socket connected'); });
+socket.on('live-state', state => { liveState = state; renderLive(); });
+socket.on('agent-list-updated', agents => { liveState.agents = agents; renderLive(); });
+socket.on('queue-updated', queue => { liveState.queue = queue; renderLive(); });
+socket.on('today-overview', today => {
+  if (!today) return;
+  document.getElementById('k-calls').textContent = today.total_calls || 0;
+  document.getElementById('k-avg').textContent = fmtDur(Math.round(today.avg_duration || 0));
+  document.getElementById('k-rating').textContent = today.avg_rating > 0 ? Number(today.avg_rating).toFixed(1) : '—';
+});
+socket.on('escalation-incoming', esc => {
+  pendingEscalations.push(Object.assign({}, esc, { time: new Date().toISOString() }));
+  renderEscalations();
+  toast('Escalation from ' + esc.agentName + ': ' + esc.customerName, 5000);
+  if (Notification.permission === 'granted') new Notification('Escalation', { body: esc.agentName + ' escalated call with ' + esc.customerName });
+});
+socket.on('call-started', async ({ callId, customerId, customerName }) => {
+  supCallId = callId;
+  await startSupCall(customerId, customerName);
+});
+socket.on('webrtc-offer', async ({ from, offer }) => {
+  if (!supPc) return;
+  await supPc.setRemoteDescription(new RTCSessionDescription(offer));
+  const ans = await supPc.createAnswer();
+  await supPc.setLocalDescription(ans);
+  socket.emit('webrtc-answer', { to: from, answer: ans });
+});
+socket.on('webrtc-answer', async ({ answer }) => { if (supPc) await supPc.setRemoteDescription(new RTCSessionDescription(answer)); });
+socket.on('webrtc-ice', async ({ candidate }) => { if (supPc) await supPc.addIceCandidate(new RTCIceCandidate(candidate)); });
+socket.on('call-ended', () => { endSupCall(); });
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
