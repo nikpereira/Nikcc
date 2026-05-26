@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>CXeller8</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#fff7f0;--white:#ffffff;--ink:#1a0d00;--muted:#7a6a5a;
+      --border:#fcd9b6;--accent:#f97316;--accent-dark:#ea580c;
+      --green:#2d9e6b;--red:#dc2626;--blue:#2563eb;
+      --nikki:#f97316;--nikki-dark:#ea580c;
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;
+    background-image:radial-gradient(ellipse at 10% 90%,rgba(249,115,22,.07) 0%,transparent 50%),radial-gradient(ellipse at 90% 10%,rgba(249,115,22,.05) 0%,transparent 50%)}
+
+    /* ── Main card ── */
+    .card{background:var(--white);border:1px solid var(--border);border-radius:12px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 8px 48px rgba(249,115,22,.1),0 2px 8px rgba(0,0,0,.06)}
+
+    /* ── Header ── */
+    .card-hdr{background:linear-gradient(135deg,#1a0d00 0%,#7c2d00 100%);padding:1.5rem 2rem 1.25rem;display:flex;align-items:center;gap:1rem}
+    .hdr-brand{font-family:'DM Serif Display',serif;font-size:1.1rem;color:white;letter-spacing:-.01em}
+    .hdr-brand span{color:var(--accent)}
+    .hdr-tagline{font-size:.68rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.1em;margin-top:.15rem}
+
+    /* ── Nikki Avatar ── */
+    .nikki-wrap{display:flex;flex-direction:column;align-items:center;padding:1.75rem 2rem 1rem}
+    .avatar-ring{position:relative;width:80px;height:80px;margin-bottom:.85rem}
+    .avatar-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--accent);opacity:.3;animation:ring1 2.5s ease-in-out infinite}
+    .avatar-ring::after{content:'';position:absolute;inset:-12px;border-radius:50%;border:2px solid var(--accent);opacity:.15;animation:ring1 2.5s ease-in-out infinite .4s}
+    @keyframes ring1{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.06);opacity:.6}}
+    .avatar-circle{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 4px 20px rgba(249,115,22,.4)}
+    .avatar-face{width:44px;height:44px}
+    /* Nikki face SVG */
+    .nikki-name{font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:.2rem}
+    .nikki-role{font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:1rem}
+
+    /* Speaking animation */
+    .avatar-circle.speaking{animation:spk .5s ease-in-out infinite alternate}
+    @keyframes spk{from{box-shadow:0 4px 20px rgba(249,115,22,.4)}to{box-shadow:0 4px 32px rgba(249,115,22,.8),0 0 0 4px rgba(249,115,22,.2)}}
+
+    /* Typing dots */
+    .typing-dots{display:none;align-items:center;gap:4px;padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:16px 16px 16px 4px;width:fit-content}
+    .typing-dots.on{display:flex}
+    .typing-dots span{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:tdot 1.2s ease infinite}
+    .typing-dots span:nth-child(2){animation-delay:.2s}
+    .typing-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes tdot{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+    /* ── Chat window ── */
+    .chat-win{height:280px;overflow-y:auto;padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:.65rem;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .chat-win::-webkit-scrollbar{width:4px}.chat-win::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    /* Messages */
+    .msg{max-width:82%;display:flex;flex-direction:column;gap:.15rem}
+    .msg.nikki{align-self:flex-start}
+    .msg.user{align-self:flex-end}
+    .msg-bubble{padding:.6rem .9rem;border-radius:16px;font-size:.875rem;line-height:1.5}
+    .msg.nikki .msg-bubble{background:white;border:1px solid var(--border);border-radius:16px 16px 16px 4px;color:var(--ink)}
+    .msg.user .msg-bubble{background:var(--accent);color:white;border-radius:16px 16px 4px 16px}
+    .msg-time{font-size:.62rem;color:var(--muted);padding:0 .25rem}
+    .msg.user .msg-time{text-align:right}
+    .msg-sender{font-size:.65rem;font-weight:600;color:var(--accent);margin-bottom:.1rem}
+
+    /* System message */
+    .sys-msg{text-align:center;font-size:.72rem;color:var(--muted);padding:.25rem 0}
+
+    /* ── Input row ── */
+    .input-row{display:flex;gap:.5rem;padding:.85rem 1.25rem;background:white;border-bottom:1px solid var(--border)}
+    .chat-input{flex:1;padding:.65rem .9rem;border:1px solid var(--border);border-radius:20px;background:var(--bg);font-family:'DM Sans',sans-serif;font-size:.875rem;color:var(--ink);outline:none;transition:border-color .2s}
+    .chat-input:focus{border-color:var(--accent)}
+    .chat-input::placeholder{color:var(--muted)}
+    .chat-input:disabled{opacity:.5;cursor:not-allowed}
+    .send-btn{width:38px;height:38px;background:var(--accent);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s}
+    .send-btn:hover{background:var(--accent-dark)}
+    .send-btn:disabled{background:var(--border);cursor:not-allowed}
+    .send-btn svg{width:15px;height:15px;color:white}
+
+    /* ── Bottom panel ── */
+    .bottom-panel{padding:1rem 1.25rem;background:white}
+
+    /* Name input (initial) */
+    .name-row{display:flex;gap:.5rem;margin-bottom:.75rem}
+    .name-input{flex:1;padding:.65rem .9rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-family:'DM Sans',sans-serif;font-size:.875rem;color:var(--ink);outline:none}
+    .name-input:focus{border-color:var(--accent)}
+    .name-input::placeholder{color:var(--muted)}
+    .start-btn{padding:.65rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s}
+    .start-btn:hover{background:var(--accent-dark)}
+
+    /* CTA buttons (escalation) */
+    .cta-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem;text-align:center}
+    .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+    .cta-btn{padding:.7rem .5rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;transition:all .2s;border:none}
+    .cta-btn svg{width:15px;height:15px;flex-shrink:0}
+    .cta-btn.chat-cta{background:#eff6ff;color:var(--blue);border:1px solid #bfdbfe}
+    .cta-btn.chat-cta:hover{background:#dbeafe}
+    .cta-btn.call-cta{background:#fff7ed;color:var(--accent);border:1px solid var(--border)}
+    .cta-btn.call-cta:hover{background:#ffedd5}
+
+    /* ── Live agent panel (side-by-side when on call) ── */
+    #live-wrap{display:none}
+    #live-wrap.on{display:flex;gap:0;width:100%;max-width:900px}
+    #live-wrap .card{border-radius:0;flex:1;max-width:none}
+    #live-wrap .card:first-child{border-radius:12px 0 0 12px;border-right:none}
+    #live-wrap .card:last-child{border-radius:0 12px 12px 0}
+
+    /* Call card */
+    .call-card{background:white;border:1px solid var(--border);border-radius:0 12px 12px 0;width:280px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+    .call-hdr{background:linear-gradient(135deg,#1a0d00,#7c2d00);padding:1rem 1.25rem;color:white}
+    .call-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.15rem}
+    .live-badge{display:flex;align-items:center;gap:.35rem;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+    .ldot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:ldot 1s ease infinite}
+    @keyframes ldot{0%,100%{opacity:1}50%{opacity:.2}}
+    .call-timer{font-family:'DM Serif Display',serif;font-size:1.4rem;font-variant-numeric:tabular-nums}
+    .call-agent-name{font-size:.8rem;color:rgba(255,255,255,.7)}
+    .call-body{flex:1;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.65rem}
+
+    /* Call controls */
+    .call-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
+    .cc{padding:.6rem .25rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.65rem;font-weight:500;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.25rem;transition:all .15s}
+    .cc svg{width:16px;height:16px}
+    .cc:hover{border-color:var(--ink);color:var(--ink)}
+    .cc.on{background:var(--accent);color:white;border-color:var(--accent)}
+    .cc.on.red{background:var(--red);border-color:var(--red)}
+    .cc.on.hold{background:#d97706;border-color:#d97706}
+
+    /* Volume */
+    .vol-row{display:flex;align-items:center;gap:.5rem}
+    .vol-row svg{width:13px;height:13px;color:var(--muted);flex-shrink:0}
+    input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--accent);border-radius:50%;cursor:pointer}
+
+    /* Signal */
+    .sig-row{display:flex;align-items:center;justify-content:space-between}
+    .sig-bars{display:flex;align-items:flex-end;gap:2px}
+    .sig-bars span{width:3px;background:var(--border);border-radius:1px}
+    .sig-bars span:nth-child(1){height:5px}.sig-bars span:nth-child(2){height:9px}.sig-bars span:nth-child(3){height:13px}.sig-bars span:nth-child(4){height:17px}
+    .sig-bars.good span{background:var(--green)}.sig-bars.medium span:nth-child(1),.sig-bars.medium span:nth-child(2),.sig-bars.medium span:nth-child(3){background:#d97706}.sig-bars.poor span:nth-child(1){background:var(--red)}
+    .sig-lbl{font-size:.65rem;color:var(--muted)}
+
+    /* Hold banner */
+    .hold-banner{background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:.5rem .75rem;font-size:.75rem;color:#854d0e;text-align:center;display:none}
+    .hold-banner.on{display:block}
+
+    .end-btn{width:100%;padding:.7rem;background:#fee2e2;color:var(--red);border:1px solid #fecaca;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:auto}
+    .end-btn:hover{background:#fecaca}
+
+    /* Screen share viewer */
+    #ss-video{width:100%;border-radius:6px;background:#000;display:none;max-height:120px;object-fit:contain}
+    #ss-video.on{display:block}
+
+    /* Ended */
+    .ended-wrap{padding:2rem 1.5rem;text-align:center}
+    .check-ic{width:56px;height:56px;background:#d1fae5;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center}
+    .ended-title{font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:.4rem}
+    .ended-sub{font-size:.82rem;color:var(--muted);margin-bottom:1.25rem}
+    .stars{display:flex;justify-content:center;gap:.4rem;margin-bottom:1.25rem}
+    .star{font-size:1.5rem;cursor:pointer;color:var(--border);transition:color .15s}
+    .star.lit{color:#f59e0b}
+    .restart-btn{padding:.75rem 2rem;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer}
+
+    /* States */
+    .st{display:none}.st.on{display:block}
+    #card-main{width:100%;max-width:520px}
+
+    audio{display:none}
+    .info-row{display:flex;align-items:center;justify-content:center;gap:.4rem;font-size:.68rem;color:var(--muted);padding:.6rem 1.25rem 1rem}
+    .info-row svg{width:12px;height:12px;flex-shrink:0}
+  </style>
+</head>
+<body>
+
+<!-- Main container: either just the chat card, or side-by-side during call -->
+<div id="live-wrap">
+
+  <!-- ── Nikki Chat Card ── -->
+  <div class="card" id="card-main">
+    <div class="card-hdr">
+      <div class="avatar-ring" style="width:38px;height:38px;margin-bottom:0;flex-shrink:0">
+        <div class="avatar-circle" id="hdr-av" style="width:38px;height:38px">
+          <svg class="avatar-face" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:22px;height:22px">
+            <circle cx="22" cy="16" r="8" fill="rgba(255,255,255,0.9)"/>
+            <circle cx="19" cy="15" r="1.5" fill="#1a0d00"/>
+            <circle cx="25" cy="15" r="1.5" fill="#1a0d00"/>
+            <path d="M18 19 Q22 23 26 19" stroke="#1a0d00" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M10 36 Q10 28 22 28 Q34 28 34 36" fill="rgba(255,255,255,0.7)"/>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <div class="hdr-brand">CXeller<span>8</span></div>
+        <div class="hdr-tagline">Powered by Nikki AI</div>
+      </div>
+    </div>
+
+    <!-- GREETING STATE -->
+    <div id="st-greet" class="st on">
+      <div class="nikki-wrap">
+        <div class="avatar-ring">
+          <div class="avatar-circle">
+            <svg class="avatar-face" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="22" cy="16" r="8" fill="rgba(255,255,255,0.9)"/>
+              <circle cx="19" cy="15" r="1.5" fill="#1a0d00"/>
+              <circle cx="25" cy="15" r="1.5" fill="#1a0d00"/>
+              <path d="M18 19 Q22 23 26 19" stroke="#1a0d00" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M10 36 Q10 28 22 28 Q34 28 34 36" fill="rgba(255,255,255,0.7)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="nikki-name">Hi, I'm Nikki</div>
+        <div class="nikki-role">CXeller8 AI Assistant</div>
+      </div>
+      <div style="padding:0 1.5rem 1.25rem;text-align:center;font-size:.875rem;color:var(--muted);line-height:1.6">
+        I can answer your questions instantly using our knowledge base. What's your name?
+      </div>
+      <div style="padding:0 1.25rem 1.25rem">
+        <div class="name-row">
+          <input class="name-input" id="cname" placeholder="Your name..." maxlength="40"/>
+          <button class="start-btn" onclick="startChat()">Start Chat</button>
+        </div>
+      </div>
+      <div class="info-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Secure · Private · Powered by CXeller8
+      </div>
+    </div>
+
+    <!-- CHAT STATE -->
+    <div id="st-chat" class="st">
+      <div class="chat-win" id="chat-win"></div>
+      <div style="padding:.65rem 1.25rem;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <div class="typing-dots" id="typing"><span></span><span></span><span></span></div>
+      </div>
+      <div class="input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendMsg()"/>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <!-- Escalation CTA (shown after first exchange) -->
+      <div class="bottom-panel" id="escalate-panel" style="display:none">
+        <div class="cta-label">Need more help? Talk to a person</div>
+        <div class="cta-row">
+          <button class="cta-btn chat-cta" onclick="requestLiveChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Live Chat
+          </button>
+          <button class="cta-btn call-cta" onclick="requestCall()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .93h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+            Voice Call
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUEUED STATE -->
+    <div id="st-queued" class="st">
+      <div style="padding:2rem 1.5rem;text-align:center">
+        <div style="width:52px;height:52px;background:#fff7ed;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:.4rem">Connecting you...</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">Position <strong id="q-pos">1</strong> in queue</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:1.5rem" id="q-eta">Estimated wait: ~1m 30s</div>
+        <div style="display:flex;justify-content:center;gap:5px;margin-bottom:1.5rem">
+          <span style="width:7px;height:7px;background:var(--accent);border-radius:50%;animation:dp 1.4s ease-in-out infinite;opacity:.4;display:inline-block"></span>
+          <span style="width:7px;height:7px;background:var(--accent);border-radius:50%;animation:dp 1.4s ease-in-out infinite .2s;opacity:.4;display:inline-block"></span>
+          <span style="width:7px;height:7px;background:var(--accent);border-radius:50%;animation:dp 1.4s ease-in-out infinite .4s;opacity:.4;display:inline-block"></span>
+        </div>
+        <button onclick="cancelQueue()" style="padding:.6rem 1.5rem;background:transparent;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--muted);cursor:pointer">Cancel</button>
+      </div>
+    </div>
+
+    <!-- ENDED STATE -->
+    <div id="st-ended" class="st">
+      <div class="ended-wrap">
+        <div class="check-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="ended-title">Session Complete</div>
+        <div class="ended-sub" id="ended-sub">Thank you for using CXeller8</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.08em">Rate your experience</div>
+        <div class="stars" id="stars">
+          <span class="star" onclick="rateStar(1)">★</span><span class="star" onclick="rateStar(2)">★</span>
+          <span class="star" onclick="rateStar(3)">★</span><span class="star" onclick="rateStar(4)">★</span>
+          <span class="star" onclick="rateStar(5)">★</span>
+        </div>
+        <button class="restart-btn" onclick="restart()">Start New Session</button>
+      </div>
+    </div>
+
+  </div><!-- /card-main -->
+
+  <!-- ── Call Panel (shows alongside chat during voice call) ── -->
+  <div class="call-card" id="call-card" style="display:none">
+    <div class="call-hdr">
+      <div class="call-hdr-top">
+        <div class="live-badge"><span class="ldot"></span> Live Call</div>
+        <div class="call-timer" id="ctimer">00:00</div>
+      </div>
+      <div class="call-agent-name" id="call-agent-nm">Connecting...</div>
+    </div>
+    <div class="call-body">
+      <video id="ss-video" autoplay playsinline></video>
+      <div class="hold-banner" id="hold-banner">⏸ You are on hold</div>
+      <div class="call-controls">
+        <button class="cc" id="cc-mute" onclick="toggleMute()">
+          <svg id="mute-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+          <span id="mute-lbl">Mute</span>
+        </button>
+        <button class="cc" id="cc-spk" onclick="toggleSpeaker()">
+          <svg id="spk-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          <span id="spk-lbl">Speaker</span>
+        </button>
+        <button class="cc" id="cc-ss" onclick="toggleSS()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span id="ss-lbl">Share</span>
+        </button>
+      </div>
+      <div class="vol-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg>
+        <input type="range" id="vol" min="0" max="100" value="100" oninput="setVol(this.value)"/>
+      </div>
+      <div class="sig-row">
+        <div class="sig-bars good" id="sig"><span></span><span></span><span></span><span></span></div>
+        <div class="sig-lbl" id="sig-lbl">Good</div>
+      </div>
+      <button class="end-btn" onclick="endCall()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 2 2 0 01-.37-.31M3 3l18 18"/></svg>
+        End Call
+      </button>
+    </div>
+  </div>
+
+</div><!-- /live-wrap -->
+
+<audio id="raudio" autoplay playsinline></audio>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+// State
+let customerName = '';
+let chatHistory = [];   // [{role,content}] for Claude
+let msgCount = 0;
+let currentCallId = null, callDbId = null, currentAgentId = null;
+let currentChatId = null;
+let timerInt = null, callSecs = 0, sigInt = null;
+let pc = null, localStream = null, ssStream = null;
+let isMuted = false, isSpkOff = false, isScreenSharing = false;
+let mode = null; // 'chat' | 'call'
+
+// ── UI helpers ───────────────────────────────────────────────────────────────
+function show(id) {
+  ['greet','chat','queued','ended'].forEach(s => {
+    document.getElementById('st-'+s).classList.toggle('on', s===id);
+  });
+}
+function fmtDur(s) { return `${Math.floor(s/60)}m ${s%60}s`; }
+
+function addMsg(role, text, sender) {
+  const win = document.getElementById('chat-win');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  const time = document.createElement('div');
+  time.className = 'msg-time';
+  time.textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if (role === 'nikki') {
+    const senderEl = document.createElement('div');
+    senderEl.className = 'msg-sender';
+    senderEl.textContent = 'Nikki';
+    div.appendChild(senderEl);
+  }
+  div.appendChild(bubble);
+  div.appendChild(time);
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+function addSys(text) {
+  const win = document.getElementById('chat-win');
+  const d = document.createElement('div');
+  d.className = 'sys-msg'; d.textContent = text;
+  win.appendChild(d); win.scrollTop = win.scrollHeight;
+}
+
+function setTyping(on) {
+  document.getElementById('typing').classList.toggle('on', on);
+  document.getElementById('hdr-av').classList.toggle('speaking', on);
+  document.getElementById('chat-input').disabled = on;
+  document.getElementById('send-btn').disabled = on;
+}
+
+// ── Chat start ───────────────────────────────────────────────────────────────
+function startChat() {
+  customerName = document.getElementById('cname').value.trim() || 'Customer';
+  document.getElementById('chat-win').innerHTML = '';
+  chatHistory = [];
+  msgCount = 0;
+  show('chat');
+  // Opening greeting from Nikki
+  setTimeout(() => {
+    nikkiSay(`Hi ${customerName}! 👋 I'm Nikki, your CXeller8 assistant. How can I help you today?`);
+  }, 400);
+}
+
+function nikkiSay(text) {
+  setTyping(false);
+  addMsg('nikki', text);
+  chatHistory.push({ role: 'assistant', content: text });
+  msgCount++;
+  if (msgCount >= 2) {
+    document.getElementById('escalate-panel').style.display = 'block';
+  }
+}
+
+async function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addMsg('user', text, customerName);
+  chatHistory.push({ role: 'user', content: text });
+  msgCount++;
+
+  setTyping(true);
+
+  try {
+    const res = await fetch('/api/nikki/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: chatHistory.slice(-10) })
+    });
+    const data = await res.json();
+    nikkiSay(data.reply);
+    // Show escalation panel after first real exchange
+    document.getElementById('escalate-panel').style.display = 'block';
+  } catch(e) {
+    setTyping(false);
+    nikkiSay("Sorry, I'm having a moment. Would you like to speak with a live agent?");
+  }
+}
+
+// ── Escalation ───────────────────────────────────────────────────────────────
+function requestLiveChat() {
+  mode = 'chat';
+  addSys('Connecting you to a live agent via chat...');
+  document.getElementById('chat-input').placeholder = 'Chat with agent...';
+  socket.emit('customer-chat-request', { name: customerName });
+  document.getElementById('escalate-panel').style.display = 'none';
+}
+
+async function requestCall() {
+  mode = 'call';
+  addSys('Requesting a voice call — please allow microphone access...');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      video: false
+    });
+  } catch(e) {
+    addSys('Microphone access denied. Please enable it and try again.');
+    return;
+  }
+  socket.emit('customer-call-request', { name: customerName });
+  document.getElementById('escalate-panel').style.display = 'none';
+  show('queued');
+}
+
+function cancelQueue() {
+  socket.emit('customer-cancel');
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  show('chat');
+  document.getElementById('escalate-panel').style.display = 'block';
+  addSys('Queue cancelled. You can still chat with Nikki or try again.');
+}
+
+// ── WebRTC ───────────────────────────────────────────────────────────────────
+async function createPC(remoteId) {
+  const cfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+  pc = new RTCPeerConnection(cfg);
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.ontrack = e => { document.getElementById('raudio').srcObject = e.streams[0]; };
+  pc.onicecandidate = e => { if (e.candidate) socket.emit('webrtc-ice', { to: remoteId, candidate: e.candidate }); };
+}
+
+function startTimer() {
+  callSecs = 0;
+  timerInt = setInterval(() => {
+    callSecs++;
+    const m = String(Math.floor(callSecs/60)).padStart(2,'0');
+    const s = String(callSecs%60).padStart(2,'0');
+    document.getElementById('ctimer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerInt); }
+
+function startSig() {
+  sigInt = setInterval(async () => {
+    if (!pc) return;
+    try {
+      const st = await pc.getStats();
+      let rtt = null;
+      st.forEach(r => { if (r.type==='candidate-pair'&&r.state==='succeeded') rtt = r.currentRoundTripTime; });
+      const bars = document.getElementById('sig'), lbl = document.getElementById('sig-lbl');
+      if (rtt === null) return;
+      if (rtt < .1) { bars.className='sig-bars good'; lbl.textContent='Good'; }
+      else if (rtt < .3) { bars.className='sig-bars medium'; lbl.textContent='Fair'; }
+      else { bars.className='sig-bars poor'; lbl.textContent='Poor'; }
+    } catch(e) {}
+  }, 3000);
+}
+function stopSig() { clearInterval(sigInt); }
+
+function showCallPanel(agentName) {
+  // Show side-by-side layout
+  document.getElementById('live-wrap').classList.add('on');
+  document.getElementById('call-card').style.display = 'flex';
+  document.getElementById('card-main').style.borderRadius = '12px 0 0 12px';
+  document.getElementById('call-agent-nm').textContent = agentName;
+  // Switch to chat state to keep chat visible
+  show('chat');
+  document.getElementById('escalate-panel').style.display = 'none';
+  addSys(`📞 Voice call connected with ${agentName}. Chat is still active.`);
+  startTimer(); startSig();
+}
+
+function hideCallPanel() {
+  document.getElementById('live-wrap').classList.remove('on');
+  document.getElementById('call-card').style.display = 'none';
+  document.getElementById('card-main').style.borderRadius = '12px';
+  stopTimer(); stopSig();
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+  document.getElementById('cc-mute').classList.toggle('on', isMuted);
+  document.getElementById('cc-mute').classList.toggle('red', isMuted);
+  document.getElementById('mute-lbl').textContent = isMuted ? 'Unmute' : 'Mute';
+  if (currentCallId) socket.emit('customer-mute', { callId: currentCallId, muted: isMuted });
+}
+
+function toggleSpeaker() {
+  isSpkOff = !isSpkOff;
+  document.getElementById('raudio').muted = isSpkOff;
+  document.getElementById('cc-spk').classList.toggle('on', isSpkOff);
+  document.getElementById('spk-lbl').textContent = isSpkOff ? 'Muted' : 'Speaker';
+}
+
+async function toggleSS() {
+  if (!isScreenSharing) {
+    try {
+      ssStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const vt = ssStream.getVideoTracks()[0];
+      const vid = document.getElementById('ss-video');
+      vid.srcObject = ssStream; vid.classList.add('on');
+      const sender = pc?.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) sender.replaceTrack(vt); else if (pc) ssStream.getTracks().forEach(t => pc.addTrack(t, ssStream));
+      isScreenSharing = true;
+      document.getElementById('cc-ss').classList.add('on');
+      document.getElementById('ss-lbl').textContent = 'Stop';
+      if (currentCallId) socket.emit('screen-share-start', { callId: currentCallId });
+      vt.onended = () => stopSS();
+    } catch(e) {}
+  } else { stopSS(); }
+}
+
+function stopSS() {
+  if (ssStream) { ssStream.getTracks().forEach(t => t.stop()); ssStream = null; }
+  const vid = document.getElementById('ss-video');
+  vid.srcObject = null; vid.classList.remove('on');
+  isScreenSharing = false;
+  document.getElementById('cc-ss').classList.remove('on');
+  document.getElementById('ss-lbl').textContent = 'Share';
+  if (currentCallId) socket.emit('screen-share-stop', { callId: currentCallId });
+}
+
+function setVol(v) { document.getElementById('raudio').volume = v / 100; }
+
+function endCall() {
+  if (currentCallId) socket.emit('end-call', { callId: currentCallId });
+  hangup();
+}
+
+function hangup() {
+  stopTimer(); stopSig(); stopSS();
+  if (pc) { pc.close(); pc = null; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  document.getElementById('raudio').srcObject = null;
+  hideCallPanel();
+  isMuted = false; isSpkOff = false; isScreenSharing = false;
+  currentCallId = null; callDbId = null; currentAgentId = null;
+  addSys('Voice call ended.');
+  show('chat');
+  document.getElementById('escalate-panel').style.display = 'block';
+}
+
+function rateStar(n) {
+  document.getElementById('stars').querySelectorAll('.star').forEach((s,i) => s.classList.toggle('lit', i < n));
+  if (callDbId) socket.emit('customer-rating', { callDbId, rating: n });
+}
+
+function restart() {
+  chatHistory = []; msgCount = 0;
+  document.getElementById('chat-win').innerHTML = '';
+  document.getElementById('cname').value = '';
+  document.getElementById('stars').querySelectorAll('.star').forEach(s => s.classList.remove('lit'));
+  document.getElementById('escalate-panel').style.display = 'none';
+  show('greet');
+}
+
+// ── Socket events ────────────────────────────────────────────────────────────
+socket.on('call-queued', ({ position, estimatedWait }) => {
+  document.getElementById('q-pos').textContent = position;
+  const m = Math.floor(estimatedWait/60), s = estimatedWait%60;
+  document.getElementById('q-eta').textContent = `Estimated wait: ~${m>0?m+'m ':''}${s}s`;
+  show('queued');
+});
+
+socket.on('queue-updated', queue => {
+  const p = queue.findIndex(c => c.socketId === socket.id);
+  if (p !== -1) { document.getElementById('q-pos').textContent = p + 1; }
+});
+
+socket.on('call-accepted', async ({ callId, agentId, agentName, callDbId: cid }) => {
+  currentCallId = callId; currentAgentId = agentId; callDbId = cid;
+  showCallPanel(agentName);
+  await createPC(agentId);
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  socket.emit('webrtc-offer', { to: agentId, offer });
+});
+
+socket.on('call-transferred', ({ agentName, agentId }) => {
+  currentAgentId = agentId;
+  document.getElementById('call-agent-nm').textContent = agentName;
+  document.getElementById('hold-banner').classList.remove('on');
+  addSys(`Transferred to ${agentName}`);
+});
+
+socket.on('call-hold-changed', ({ onHold }) => {
+  document.getElementById('hold-banner').classList.toggle('on', onHold);
+  document.getElementById('raudio').muted = onHold ? true : isSpkOff;
+});
+
+socket.on('webrtc-answer', async ({ answer }) => { if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer)); });
+socket.on('webrtc-ice', async ({ candidate }) => { if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate)); });
+
+socket.on('call-ended', ({ duration }) => {
+  hangup();
+  document.getElementById('ended-sub').textContent = `Call duration: ${fmtDur(duration||callSecs)}`;
+});
+
+socket.on('peer-screen-share-started', () => { addSys('Agent is sharing their screen'); });
+socket.on('peer-screen-share-stopped', () => { addSys('Screen share ended'); });
+
+// Chat with live agent
+socket.on('chat-started', ({ chatId, agentName }) => {
+  currentChatId = chatId;
+  addSys(`Connected to ${agentName || 'an agent'} via live chat`);
+  document.getElementById('chat-input').placeholder = 'Message agent...';
+});
+
+socket.on('chat-agent-joined', ({ agentName }) => {
+  addSys(`${agentName} joined the chat`);
+});
+
+socket.on('chat-message', msg => {
+  if (msg.senderRole === 'agent') {
+    addMsg('nikki', msg.content);
+  }
+});
+
+socket.on('chat-ended', () => {
+  addSys('Chat session ended');
+  currentChatId = null;
+  document.getElementById('chat-input').placeholder = 'Ask me anything...';
+  document.getElementById('escalate-panel').style.display = 'block';
+});
+
+// Override send to route to live agent chat if connected
+const originalSend = sendMsg;
+window.sendMsg = function() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (currentChatId) {
+    input.value = '';
+    addMsg('user', text, customerName);
+    socket.emit('chat-message', { chatId: currentChatId, content: text, msgType: 'text' });
+    return;
+  }
+  originalSend();
+};
+
+document.getElementById('cname').addEventListener('keydown', e => { if (e.key==='Enter') startChat(); });
+</script>
+</body>
+</html>
