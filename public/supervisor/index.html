@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>CXeller8 — Supervisor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#090704;--s1:#120e09;--s2:#1a140e;--s3:#221b13;--bd:#2e2218;--tx:#eeeef0;--mt:#666674;--ac:#f97316;--gn:#2d9e6b;--gnb:rgba(45,158,107,.12);--yw:#d4a017;--ywb:rgba(212,160,23,.12);--rd:#e05555;--rdb:rgba(224,85,85,.1);--bl:#4a8fc4;--blb:rgba(74,143,196,.1);--pu:#f97316;--pub:rgba(249,115,22,.1)}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    /* Login */
+    #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;padding:2rem}
+    .lcard{background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:2.5rem;width:100%;max-width:360px}
+    .ltitle{font-family:'DM Serif Display',serif;font-size:1.9rem;margin-bottom:.25rem}
+    .lsub{font-size:.78rem;color:var(--mt);margin-bottom:1.75rem}
+    .lbl{display:block;font-size:.67rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mt);margin-bottom:.4rem}
+    input[type=email],input[type=password],input[type=text]{width:100%;padding:.72rem 1rem;background:var(--bg);border:1px solid var(--bd);border-radius:3px;color:var(--tx);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;margin-bottom:1rem;transition:border-color .2s}
+    input:focus{border-color:var(--ac)}input::placeholder{color:var(--mt)}
+    .lerr{background:var(--rdb);border:1px solid rgba(224,85,85,.3);border-radius:3px;padding:.5rem .85rem;font-size:.78rem;color:var(--rd);margin-bottom:.85rem;display:none}
+    .lerr.on{display:block}
+    .lbtn{width:100%;padding:.85rem;background:var(--pu);color:white;border:none;border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;transition:opacity .2s}
+    .lbtn:hover{opacity:.88}
+    /* App */
+    #app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+    header{background:linear-gradient(135deg,#090704 50%,#1f0900);border-bottom:1px solid var(--bd);padding:0 1.75rem;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .logo{font-family:'DM Serif Display',serif;font-size:1.15rem;letter-spacing:-.01em}.logo span{color:var(--pu);font-weight:800}
+    .sup-badge{background:var(--pub);color:var(--pu);border:1px solid rgba(249,115,22,.25);border-radius:100px;padding:.22rem .75rem;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+    /* Nav tabs */
+    .nav{display:flex;border-bottom:1px solid var(--bd);background:var(--s1);padding:0 1.75rem;flex-shrink:0}
+    .ntab{padding:.65rem .9rem;font-size:.72rem;font-weight:500;color:var(--mt);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:.4rem}
+    .ntab.active{color:var(--tx);border-bottom-color:var(--pu)}
+    .ntab .nbadge{background:var(--ac);color:white;font-size:.58rem;padding:.08rem .38rem;border-radius:100px}
+    /* Pages */
+    .page{display:none;flex:1;overflow:hidden}.page.on{display:flex;flex-direction:column;overflow:hidden}
+    .pinner{flex:1;overflow-y:auto;padding:1.5rem 1.75rem}
+    .pinner::-webkit-scrollbar{width:5px}.pinner::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+    /* KPI row */
+    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:.85rem;margin-bottom:1.75rem}
+    .kpi{background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:1rem 1.15rem}
+    .kv{font-family:'DM Serif Display',serif;font-size:1.75rem;line-height:1;margin-bottom:.2rem}
+    .kv.gn{color:var(--gn)}.kv.ac{color:var(--ac)}.kv.yw{color:var(--yw)}.kv.pu{color:var(--pu)}
+    .klbl{font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.08em}
+    /* Grid layout */
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem}
+    .card{background:var(--s1);border:1px solid var(--bd);border-radius:4px;overflow:hidden}
+    .card-hdr{padding:.85rem 1.15rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mt)}
+    .card-body{padding:.85rem 1.15rem}
+    .badge{background:var(--ac);color:white;font-size:.58rem;padding:.08rem .38rem;border-radius:100px}
+    .gnbadge{background:var(--gnb);color:var(--gn);font-size:.62rem;padding:.1rem .5rem;border-radius:100px}
+    /* Agent roster */
+    .atable{width:100%;border-collapse:collapse}
+    .atable th{font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mt);padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bd)}
+    .atable td{padding:.65rem .75rem;font-size:.8rem;border-bottom:1px solid var(--bd);vertical-align:middle}
+    .atable tr:last-child td{border-bottom:none}
+    .atable tr:hover td{background:var(--s2)}
+    .st-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:.4rem}
+    .st-dot.available{background:var(--gn)}.st-dot.busy{background:var(--yw)}.st-dot.offline{background:var(--mt)}
+    .del-btn{padding:.25rem .6rem;background:var(--rdb);color:var(--rd);border:1px solid rgba(224,85,85,.25);border-radius:100px;font-size:.65rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+    .del-btn:hover{background:rgba(224,85,85,.2)}
+    /* Queue */
+    .qitem{padding:.75rem .9rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+    .qitem:last-child{border-bottom:none}
+    .qpos{width:24px;height:24px;background:var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:600;color:var(--mt);flex-shrink:0;margin-right:.65rem}
+    .qnm{font-size:.82rem;font-weight:500;flex:1}
+    .qwt{font-size:.68rem;color:var(--mt)}
+    /* Live calls */
+    .lcitem{padding:.75rem .9rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+    .lcitem:last-child{border-bottom:none}
+    .lcdot{width:7px;height:7px;background:var(--ac);border-radius:50%;animation:pd 1.2s ease infinite;flex-shrink:0;margin-right:.6rem}
+    @keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+    .lcnm{font-size:.82rem;font-weight:500;flex:1}
+    .lcsub{font-size:.65rem;color:var(--mt)}
+    /* Escalations */
+    .escitem{background:var(--s2);border:1px solid rgba(212,160,23,.3);border-radius:3px;padding:.85rem 1rem;margin-bottom:.6rem}
+    .escbadge{font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--yw);margin-bottom:.45rem;display:flex;align-items:center;gap:.35rem}
+    .escpdot{width:6px;height:6px;background:var(--yw);border-radius:50%;animation:pd .8s ease infinite}
+    .escnm{font-size:.9rem;font-weight:500;margin-bottom:.15rem}
+    .escsub{font-size:.72rem;color:var(--mt);margin-bottom:.65rem}
+    .escaccbtn{padding:.45rem .85rem;background:var(--yw);color:var(--bg);border:none;border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:opacity .2s}
+    .escaccbtn:hover{opacity:.88}
+    /* Add agent modal */
+    #add-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:2rem}
+    #add-modal.on{display:flex}
+    .modal-card{background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:2rem;width:100%;max-width:380px}
+    .modal-title{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:1.25rem}
+    .mbtn{width:100%;padding:.75rem;background:var(--pu);color:white;border:none;border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer;margin-top:.25rem}
+    .mbtn:hover{opacity:.88}
+    .mcancel{width:100%;padding:.65rem;background:transparent;border:1px solid var(--bd);border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--mt);cursor:pointer;margin-top:.5rem}
+    .merr{background:var(--rdb);border:1px solid rgba(224,85,85,.3);border-radius:3px;padding:.4rem .75rem;font-size:.75rem;color:var(--rd);margin-bottom:.75rem;display:none}
+    .merr.on{display:block}
+    /* Charts */
+    .chart-wrap{position:relative;height:200px}
+    /* History table */
+    .htable{width:100%;border-collapse:collapse}
+    .htable th{font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mt);padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bd)}
+    .htable td{padding:.6rem .75rem;font-size:.75rem;border-bottom:1px solid var(--bd)}
+    .htable tr:last-child td{border-bottom:none}
+    .htag{font-size:.6rem;padding:.08rem .35rem;border-radius:100px}
+    .htag.resolved{background:var(--gnb);color:var(--gn)}.htag.escalated{background:var(--ywb);color:var(--yw)}.htag.callback{background:var(--blb);color:var(--bl)}.htag.dropped{background:var(--rdb);color:var(--rd)}
+    .stars-sm{color:#f59e0b;font-size:.72rem}
+    /* In-call section for supervisor */
+    #sup-call-sec{display:none;background:var(--s2);border:1px solid rgba(212,160,23,.35);border-radius:4px;padding:1.15rem;margin-bottom:1.25rem}
+    .sclive{font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);display:flex;align-items:center;gap:.35rem;margin-bottom:.6rem}
+    .scnm{font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:.85rem}
+    .scend{padding:.55rem 1rem;background:var(--rdb);color:var(--rd);border:1px solid rgba(224,85,85,.25);border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer}
+    #toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:.55rem 1.1rem;font-size:.78rem;color:var(--tx);opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+    #toast.on{opacity:1}
+    audio{display:none}
+    .empty{text-align:center;padding:2rem 1rem;color:var(--mt);font-size:.78rem}
+    .addbtn{padding:.38rem .85rem;background:var(--pub);color:var(--pu);border:1px solid rgba(249,115,22,.25);border-radius:100px;font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+    .addbtn:hover{background:rgba(139,92,246,.2)}
+  </style>
+</head>
+<body>
+<!-- LOGIN (auth temporarily disabled) -->
+<div id="login" style="display:none">
+  <div class="lcard"><div class="ltitle">Supervisor</div></div>
+</div>
+<!-- APP -->
+<div id="app">
+  <header>
+    <div style="display:flex;align-items:center;gap:1.1rem">
+      <div class="logo">CXeller<span>8</span></div>
+      <div class="sup-badge">Supervisor</div>
+    </div>
+    <div style="font-size:.75rem;color:var(--mt)" id="sup-name"></div>
+  </header>
+  <div class="nav">
+    <div class="ntab active" onclick="gotoPage('live')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Live
+    </div>
+    <div class="ntab" onclick="gotoPage('escalations')">
+      ⚡ Escalations <span class="nbadge" id="esc-cnt" style="display:none">0</span>
+    </div>
+    <div class="ntab" onclick="gotoPage('reports')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </div>
+    <div class="ntab" onclick="gotoPage('agents')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Agents
+    </div>
+    <div class="ntab" onclick="gotoPage('kb')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Knowledge Base
+    </div>
+    <div class="ntab" onclick="gotoPage('history')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 3 3 7 7 7"/></svg>
+      History
+    </div>
+  </div>
+
+  <!-- LIVE PAGE -->
+  <div class="page on" id="page-live">
+    <div class="pinner">
+      <!-- KPIs -->
+      <div class="kpis" id="kpis">
+        <div class="kpi"><div class="kv gn" id="k-calls">0</div><div class="klbl">Calls Today</div></div>
+        <div class="kpi"><div class="kv" id="k-avg">0:00</div><div class="klbl">Avg Duration</div></div>
+        <div class="kpi"><div class="kv yw" id="k-queue">0</div><div class="klbl">In Queue</div></div>
+        <div class="kpi"><div class="kv pu" id="k-agents">0</div><div class="klbl">Online Agents</div></div>
+        <div class="kpi"><div class="kv ac" id="k-rating">—</div><div class="klbl">Avg Rating</div></div>
+      </div>
+      <!-- Sup in-call section -->
+      <div id="sup-call-sec">
+        <div class="sclive"><span style="width:7px;height:7px;background:var(--ac);border-radius:50%;animation:pd 1s ease infinite;display:inline-block"></span> You are on an escalation call</div>
+        <div class="scnm" id="sup-call-nm">Customer</div>
+        <button class="scend" onclick="endSupCall()">End Call</button>
+      </div>
+      <div class="grid2">
+        <!-- Live calls -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Live Calls</div><span class="badge" id="lc-cnt">0</span></div>
+          <div id="live-calls-list"><div class="empty">No active calls</div></div>
+        </div>
+        <!-- Queue -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Queue</div><span class="badge" id="q-cnt">0</span></div>
+          <div id="queue-list"><div class="empty">Queue is empty</div></div>
+        </div>
+      </div>
+      <!-- Agent roster -->
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Agent Status</div><span id="agents-online" class="gnbadge">0 online</span></div>
+        <div style="overflow-x:auto">
+          <table class="atable"><thead><tr><th>Agent</th><th>Status</th><th>Current Call</th><th>Calls Today</th></tr></thead>
+          <tbody id="live-agents-tbody"><tr><td colspan="4" class="empty">No agents online</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESCALATIONS PAGE -->
+  <div class="page" id="page-escalations">
+    <div class="pinner">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">Escalations</div>
+        <div style="font-size:.75rem;color:var(--mt)">Incoming calls from agents that need manager support</div>
+      </div>
+      <div id="esc-incoming" style="margin-bottom:1.25rem"></div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Escalation History</div></div>
+        <div id="esc-history-list"><div class="empty">No escalations yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTS PAGE -->
+  <div class="page" id="page-reports">
+    <div class="pinner">
+      <div class="grid2" style="margin-bottom:1rem">
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Daily Call Volume (30 days)</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="vol-chart"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Customer Ratings (30 days)</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="rating-chart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Disposition Breakdown</div></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="disp-chart"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column:span 2">
+          <div class="card-hdr"><div class="card-title">Agent Performance</div></div>
+          <div style="overflow-x:auto">
+            <table class="atable"><thead><tr><th>Agent</th><th>Total Calls</th><th>Avg Duration</th><th>Avg Rating</th></tr></thead>
+            <tbody id="perf-tbody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENTS PAGE -->
+  <div class="page" id="page-agents">
+    <div class="pinner">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">Agent Management</div>
+        <button class="addbtn" onclick="openAddAgent()">+ Add Agent</button>
+      </div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="atable"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Total Calls</th><th>Avg Rating</th><th>Auto-Record</th><th>Actions</th></tr></thead>
+          <tbody id="agents-tbody"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KB PAGE -->
+  <div class="page" id="page-kb">
+    <div class="pinner">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">Knowledge Base</div>
+          <div style="font-size:.75rem;color:var(--mt);margin-top:.2rem">Documents ingested here power Nikki's answers on the customer page</div>
+        </div>
+        <label style="padding:.4rem .9rem;background:var(--pub);color:var(--pu);border:1px solid rgba(249,115,22,.25);border-radius:100px;font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;display:flex;align-items:center;gap:.4rem" for="kb-upload">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Document
+        </label>
+        <input type="file" id="kb-upload" style="display:none" accept=".pdf,.docx,.doc,.txt" onchange="uploadDoc(this)"/>
+      </div>
+      <!-- Upload progress -->
+      <div id="kb-progress" style="display:none;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:.82rem">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div style="width:18px;height:18px;border:2px solid var(--pu);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div>
+          <span id="kb-progress-text">Uploading and processing...</span>
+        </div>
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+      <!-- Documents list -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">Ingested Documents</div>
+          <span class="badge" id="kb-doc-count">0</span>
+        </div>
+        <div id="kb-doc-list" style="padding:.5rem 0">
+          <div class="empty">No documents yet. Upload a PDF, DOCX, or TXT file to get started.</div>
+        </div>
+      </div>
+      <!-- Info box -->
+      <div style="margin-top:1rem;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1rem 1.25rem;font-size:.78rem;color:var(--mt);line-height:1.6">
+        <strong style="color:var(--tx)">How it works:</strong> Uploaded documents are split into chunks, embedded using the Voyage AI model, and stored in your Turso database. When a customer asks Nikki a question, the most relevant chunks are retrieved and used to generate an accurate answer.
+        <br/><br/>Supported formats: <strong style="color:var(--tx)">PDF, DOCX, TXT</strong> · Max file size: 20MB
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PAGE -->
+  <div class="page" id="page-history">
+    <div class="pinner">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:1.25rem">Call History</div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="htable">
+            <thead><tr><th>Time</th><th>Customer</th><th>Agent</th><th>Duration</th><th>Disposition</th><th>Rating</th><th>Notes</th></tr></thead>
+            <tbody id="hist-tbody"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Agent Modal -->
+<div id="add-modal">
+  <div class="modal-card">
+    <div class="modal-title">Add New Agent</div>
+    <div class="merr" id="merr"></div>
+    <label class="lbl">Full Name</label>
+    <input type="text" id="m-name" placeholder="Jane Smith"/>
+    <label class="lbl">Email</label>
+    <input type="email" id="m-email" placeholder="jane@company.com"/>
+    <label class="lbl">Password</label>
+    <input type="password" id="m-pass" placeholder="Minimum 6 characters"/>
+    <button class="mbtn" onclick="addAgent()">Create Agent</button>
+    <button class="mcancel" onclick="closeAddAgent()">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<audio id="sup-audio" autoplay playsinline></audio>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io();
+let token=null,liveState={agents:[],queue:[],activeCalls:[]};
+let charts={};
+let supCallId=null,supPc=null,supStream=null;
+let pendingEscalations=[];
+
+function toast(msg,d=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),d);}
+function gotoPage(name){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById('page-'+name).classList.add('on');document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('active',['live','escalations','reports','agents','kb','history'][i]===name));if(name==='reports')loadReports();if(name==='agents')loadAgents();if(name==='history')loadHistory();if(name==='kb')loadKBDocs();}
+function fmtDur(s){if(!s)return'0:00';const m=Math.floor(s/60);return `${m}:${String(s%60).padStart(2,'0')}`;}
+
+async function doLogin(){
+  // Auth temporarily disabled — auto-login
+  try{
+    const r=await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:'supervisor@cxeller8.com',password:'supervisor123'})
+    });
+    const raw=await r.text();
+    try{
+      const data=JSON.parse(raw);
+      if(data.token){
+        token=data.token;
+        document.getElementById('sup-name').textContent=data.user?.name||'Supervisor';
+      }
+    }catch(e){ console.warn('Login parse error:', raw.slice(0,100)); }
+  }catch(e){ console.warn('Auto-login fetch failed:', e.message); }
+  // Show dashboard regardless
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='flex';
+  socket.emit('supervisor-join',{token:token||''});
+  setInterval(()=>refreshKPIs(),30000);
+}
+
+function api(path,opts={}){return fetch(path,{...opts,headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json',...(opts.headers||{})}}).then(r=>r.json());}
+
+async function refreshKPIs(){
+  try{const d=await api('/api/supervisor/overview');renderKPIs(d.today);renderReportCharts(d.historical,d.agents);}catch(e){}
+}
+
+function renderKPIs(today){
+  if(!today)return;
+  document.getElementById('k-calls').textContent=today.total_calls||0;
+  document.getElementById('k-avg').textContent=fmtDur(Math.round(today.avg_duration||0));
+  document.getElementById('k-rating').textContent=today.avg_rating>0?Number(today.avg_rating).toFixed(1):'—';
+}
+
+async function loadReports(){
+  try{
+    const d=await api('/api/supervisor/overview');
+    renderKPIs(d.today);renderReportCharts(d.historical,d.agents);
+    // Disposition
+    if(d.today){
+      const dispData={resolved:d.today.resolved||0,escalated:d.today.escalated||0,dropped:d.today.dropped||0,callback:(d.today.total_calls||0)-(d.today.resolved||0)-(d.today.escalated||0)-(d.today.dropped||0)};
+      renderDispChart(dispData);
+    }
+    // Agent performance table
+    const tbody=document.getElementById('perf-tbody');
+    if(!d.agents||!d.agents.length){tbody.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';return;}
+    tbody.innerHTML=d.agents.map(a=>{const avgDur=a.total_calls>0?Math.round(a.total_duration/a.total_calls):0;return `<tr><td>${a.name}</td><td>${a.total_calls||0}</td><td>${fmtDur(avgDur)}</td><td>${a.avg_rating>0?Number(a.avg_rating).toFixed(1)+'★':'—'}</td></tr>`;}).join('');
+  }catch(e){console.error(e);}
+}
+
+function renderReportCharts(historical,agents){
+  if(!historical||!historical.length)return;
+  const labels=historical.map(h=>h.call_date.slice(5));
+  const callData=historical.map(h=>h.total_calls||0);
+  const ratingData=historical.map(h=>Number(h.avg_rating||0).toFixed(1));
+  const commonOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666674',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#666674',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}}};
+  if(charts.vol){charts.vol.destroy();}
+  const vc=document.getElementById('vol-chart').getContext('2d');
+  charts.vol=new Chart(vc,{type:'bar',data:{labels,datasets:[{data:callData,backgroundColor:'rgba(249,115,22,.65)',borderColor:'rgba(200,64,26,1)',borderWidth:1}]},options:commonOpts});
+  if(charts.rating){charts.rating.destroy();}
+  const rc=document.getElementById('rating-chart').getContext('2d');
+  charts.rating=new Chart(rc,{type:'line',data:{labels,datasets:[{data:ratingData,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',tension:.4,pointRadius:3}]},options:{...commonOpts,scales:{...commonOpts.scales,y:{...commonOpts.scales.y,min:0,max:5}}}});
+}
+
+function renderDispChart(data){
+  if(charts.disp)charts.disp.destroy();
+  const ctx=document.getElementById('disp-chart').getContext('2d');
+  charts.disp=new Chart(ctx,{type:'doughnut',data:{labels:['Resolved','Escalated','Dropped','Callback'],datasets:[{data:[data.resolved,data.escalated,data.dropped,data.callback],backgroundColor:['rgba(45,158,107,.7)','rgba(212,160,23,.7)','rgba(224,85,85,.7)','rgba(74,143,196,.7)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#6b6560',font:{size:10}}}}}});
+}
+
+async function loadAgents(){
+  try{
+    const [dbAgents]=await Promise.all([api('/api/supervisor/agents')]);
+    const tbody=document.getElementById('agents-tbody');
+    if(!dbAgents||!dbAgents.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No agents</td></tr>';return;}
+    // Merge with live state
+    const liveMap={};
+    liveState.agents.forEach(a=>{liveMap[a.id]=a;});
+    tbody.innerHTML=dbAgents.map(a=>{
+      const live=liveMap[a.id];
+      const status=live?live.status:'offline';
+      const ar=a.auto_record===1||a.auto_record==='1';
+      return '<tr>'
+        +'<td>'+a.name+'</td>'
+        +'<td style="color:var(--mt)">'+a.email+'</td>'
+        +'<td><span class="st-dot '+status+'"></span>'+status+'</td>'
+        +'<td>'+(a.total_calls||0)+'</td>'
+        +'<td>'+(a.avg_rating>0?Number(a.avg_rating).toFixed(1)+'★':'—')+'</td>'
+        +'<td><label style="display:flex;align-items:center;gap:.4rem;cursor:pointer">'
+        +'<input type="checkbox" '+(ar?'checked':'')
+        +' onchange="toggleAutoRecord(''+a.id+'',this.checked)"'
+        +' style="accent-color:var(--pu);width:14px;height:14px;cursor:pointer"/>'
+        +'<span style="font-size:.7rem;color:'+(ar?'var(--pu)':'var(--mt)')+'">'+( ar?'On':'Off')+'</span>'
+        +'</label></td>'
+        +'<td><button class="del-btn" onclick="deleteAgent(''+a.id+'',''+a.name+'')">Remove</button></td>'
+        +'</tr>';
+    }).join('');
+  }catch(e){console.error(e);}
+}
+
+async function loadHistory(){
+  try{
+    const d=await api('/api/supervisor/overview');
+    // We don't have a dedicated call list endpoint; show agent summaries
+    // For a full history view we'd need another endpoint - show what we have
+    const tbody=document.getElementById('hist-tbody');
+    tbody.innerHTML='<tr><td colspan="7" style="padding:1rem;font-size:.75rem;color:var(--mt)">Connect to Turso and run a full query — history loads from your database here.</td></tr>';
+  }catch(e){}
+}
+
+function openAddAgent(){document.getElementById('add-modal').classList.add('on');document.getElementById('merr').classList.remove('on');}
+function closeAddAgent(){document.getElementById('add-modal').classList.remove('on');['m-name','m-email','m-pass'].forEach(id=>document.getElementById(id).value='');}
+async function addAgent(){
+  const name=document.getElementById('m-name').value.trim();
+  const email=document.getElementById('m-email').value.trim();
+  const pass=document.getElementById('m-pass').value;
+  const err=document.getElementById('merr');err.classList.remove('on');
+  if(!name||!email||!pass){err.textContent='All fields required';err.classList.add('on');return;}
+  if(pass.length<6){err.textContent='Password must be 6+ characters';err.classList.add('on');return;}
+  try{
+    const r=await api('/api/supervisor/agents',{method:'POST',body:JSON.stringify({name,email,password:pass})});
+    if(r.error){err.textContent=r.error;err.classList.add('on');return;}
+    toast(`Agent ${name} created`);closeAddAgent();loadAgents();
+  }catch(e){err.textContent='Server error';err.classList.add('on');}
+}
+async function deleteAgent(id,name){
+  if(!confirm(`Remove agent ${name}? They will no longer be able to log in.`))return;
+  try{await api(`/api/supervisor/agents/${id}`,{method:'DELETE'});toast(`${name} removed`);loadAgents();}
+  catch(e){toast('Error removing agent');}
+}
+
+async function toggleAutoRecord(agentId, enabled){
+  try{
+    await api(`/api/supervisor/agents/${agentId}/autorecord`,{method:'PUT',body:JSON.stringify({enabled})});
+    toast(enabled?'Auto-record enabled for agent':'Auto-record disabled');
+    loadAgents();
+  }catch(e){toast('Failed to update auto-record');}
+}
+
+// Live state rendering
+function renderLiveState(){
+  const{agents,queue,activeCalls}=liveState;
+  const online=agents.filter(a=>a.status!=='offline');
+  document.getElementById('k-queue').textContent=queue.length;
+  document.getElementById('k-agents').textContent=online.length;
+  document.getElementById('agents-online').textContent=`${online.length} online`;
+  // Live calls
+  document.getElementById('lc-cnt').textContent=activeCalls.length;
+  const lcList=document.getElementById('live-calls-list');
+  if(!activeCalls.length){lcList.innerHTML='<div class="empty">No active calls</div>';}
+  else{lcList.innerHTML=activeCalls.map(c=>{const agentName=agents.find(a=>a.socketId===c.agentId)?.name||'Agent';const dur=Math.round((Date.now()-c.startTime)/1000);return `<div class="lcitem"><span class="lcdot"></span><div style="flex:1"><div class="lcnm">${c.customerName}</div><div class="lcsub">${agentName} · ${fmtDur(dur)}</div></div>${c.onHold?'<span style="font-size:.65rem;color:var(--yw)">On Hold</span>':''}</div>`;}).join('');}
+  // Queue
+  document.getElementById('q-cnt').textContent=queue.length;
+  const qList=document.getElementById('queue-list');
+  if(!queue.length){qList.innerHTML='<div class="empty">Queue is empty</div>';}
+  else{qList.innerHTML=queue.map((c,i)=>{const w=Math.round((Date.now()-c.waitingSince)/1000);return `<div class="qitem"><div class="qpos">${i+1}</div><div class="qnm">${c.name}</div><div class="qwt">${w}s</div></div>`;}).join('');}
+  // Agent table
+  const atbody=document.getElementById('live-agents-tbody');
+  if(!online.length){atbody.innerHTML='<tr><td colspan="4" class="empty">No agents online</td></tr>';}
+  else{atbody.innerHTML=online.map(a=>{const call=activeCalls.find(c=>c.agentId===a.socketId);return `<tr><td>${a.name}</td><td><span class="st-dot ${a.status}"></span>${a.status}</td><td style="font-size:.72rem;color:var(--mt)">${call?call.customerName:'—'}</td><td>—</td></tr>`;}).join('');}
+}
+
+// Escalations
+function renderEscalations(){
+  const cnt=pendingEscalations.length;
+  const cntEl=document.getElementById('esc-cnt');
+  if(cnt>0){cntEl.style.display='inline';cntEl.textContent=cnt;}else{cntEl.style.display='none';}
+  const inc=document.getElementById('esc-incoming');
+  if(!pendingEscalations.length){inc.innerHTML='<div class="empty">No pending escalations</div>';return;}
+  inc.innerHTML=pendingEscalations.map(e=>`
+    <div class="escitem">
+      <div class="escbadge"><span class="escpdot"></span> Escalation from ${e.agentName}</div>
+      <div class="escnm">${e.customerName}</div>
+      <div class="escsub">${e.reason||'No reason provided'} · ${new Date(e.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      <button class="escaccbtn" onclick="acceptEscalation('${e.escalationId}','${e.callId}','${e.customerId}','${e.customerName}')">Accept Call</button>
+    </div>`).join('');
+}
+
+async function acceptEscalation(escId,callId,custId,custNm){
+  socket.emit('supervisor-accept-escalation',{escalationId:escId,callId});
+  pendingEscalations=pendingEscalations.filter(e=>e.escalationId!==escId);
+  renderEscalations();
+}
+
+// Supervisor WebRTC (for escalation calls)
+async function startSupCall(customerId,customerName){
+  supCallId=null;
+  try{supStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});}catch{toast('Mic required');return;}
+  const cfg={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+  supPc=new RTCPeerConnection(cfg);
+  supStream.getTracks().forEach(t=>supPc.addTrack(t,supStream));
+  supPc.ontrack=e=>{document.getElementById('sup-audio').srcObject=e.streams[0];};
+  supPc.onicecandidate=e=>{if(e.candidate)socket.emit('webrtc-ice',{to:customerId,candidate:e.candidate});};
+  document.getElementById('sup-call-nm').textContent=customerName;
+  document.getElementById('sup-call-sec').style.display='block';
+}
+function endSupCall(){
+  if(supPc){supPc.close();supPc=null;}
+  if(supStream){supStream.getTracks().forEach(t=>t.stop());supStream=null;}
+  document.getElementById('sup-audio').srcObject=null;
+  document.getElementById('sup-call-sec').style.display='none';
+  supCallId=null;
+}
+
+// Socket events
+socket.on('live-state',state=>{liveState=state;renderLiveState();});
+socket.on('today-overview',today=>{renderKPIs(today);});
+socket.on('queue-updated',queue=>{liveState.queue=queue;renderLiveState();});
+socket.on('agent-list-updated',agents=>{liveState.agents=agents;renderLiveState();});
+
+socket.on('escalation-incoming',esc=>{
+  pendingEscalations.push({...esc,time:new Date().toISOString()});
+  renderEscalations();
+  toast(`⚡ Escalation from ${esc.agentName}: ${esc.customerName}`);
+  if(Notification.permission==='granted')new Notification('⚡ Escalation',{body:`${esc.agentName} escalated call with ${esc.customerName}`});
+});
+
+socket.on('call-started',async({callId,customerId,customerName})=>{
+  supCallId=callId;
+  await startSupCall(customerId,customerName);
+});
+socket.on('webrtc-offer',async({from,offer})=>{if(!supPc)return;await supPc.setRemoteDescription(new RTCSessionDescription(offer));const ans=await supPc.createAnswer();await supPc.setLocalDescription(ans);socket.emit('webrtc-answer',{to:from,answer:ans});});
+socket.on('webrtc-answer',async({answer})=>{if(supPc)await supPc.setRemoteDescription(new RTCSessionDescription(answer));});
+socket.on('webrtc-ice',async({candidate})=>{if(supPc)await supPc.addIceCandidate(new RTCIceCandidate(candidate));});
+socket.on('call-ended',()=>{endSupCall();});
+
+// Refresh queue wait times every 5s
+setInterval(()=>{if(liveState.queue.length||liveState.activeCalls.length)renderLiveState();},5000);
+
+if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+// Auto-login on load
+doLogin();
+
+// ── Knowledge Base ──────────────────────────────────────────────────────────
+async function loadKBDocs(){
+  try{
+    const docs=await api('/api/kb/documents');
+    const list=document.getElementById('kb-doc-list');
+    document.getElementById('kb-doc-count').textContent=docs.length;
+    if(!docs||!docs.length){list.innerHTML='<div class="empty">No documents yet. Upload a PDF, DOCX, or TXT.</div>';return;}
+    list.innerHTML=docs.map(d=>{
+      const t=new Date(d.uploaded_at).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      const icon=d.file_type==='pdf'?'PDF':d.file_type==='docx'||d.file_type==='doc'?'DOCX':'TXT';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.15rem;border-bottom:1px solid var(--bd)">'
+        +'<div style="display:flex;align-items:center;gap:.75rem">'
+        +'<span style="background:var(--pub);color:var(--pu);font-size:.6rem;font-weight:700;padding:.15rem .4rem;border-radius:3px">'+icon+'</span>'
+        +'<div><div style="font-size:.82rem;font-weight:500">'+d.name+'</div>'
+        +'<div style="font-size:.65rem;color:var(--mt)">'+d.chunk_count+' chunks &middot; '+t+(d.uploaded_by?' &middot; by '+d.uploaded_by:'')+'</div></div></div>'
+        +'<button onclick="deleteDoc(''+d.id+'',''+d.name+'')" style="padding:.25rem .65rem;background:var(--rdb);color:var(--rd);border:1px solid rgba(224,85,85,.25);border-radius:100px;font-size:.65rem;cursor:pointer;font-family:'DM Sans',sans-serif">Remove</button>'
+        +'</div>';
+    }).join('');
+  }catch(e){console.error(e);}
+}
+
+async function uploadDoc(input){
+  const file=input.files[0];if(!file)return;
+  const prog=document.getElementById('kb-progress');
+  const progTxt=document.getElementById('kb-progress-text');
+  prog.style.display='block';
+  progTxt.textContent='Uploading "'+file.name+'"...';
+  try{
+    const fd=new FormData();fd.append('file',file);
+    const r=await fetch('/api/kb/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+    const data=await r.json();
+    if(r.ok){
+      progTxt.textContent='Uploaded "'+data.name+'" ('+data.chunks+' chunks). Embedding in background...';
+      setTimeout(()=>{prog.style.display='none';loadKBDocs();},3000);
+    } else {
+      progTxt.textContent='Error: '+data.error;
+      setTimeout(()=>{prog.style.display='none';},4000);
+    }
+  }catch(e){
+    progTxt.textContent='Upload failed: '+e.message;
+    setTimeout(()=>{prog.style.display='none';},4000);
+  }
+  input.value='';
+}
+
+async function deleteDoc(id,name){
+  if(!confirm('Remove "'+name+'" from the knowledge base?'))return;
+  try{
+    await api('/api/kb/documents/'+id,{method:'DELETE'});
+    toast(name+' removed');
+    loadKBDocs();
+  }catch(e){toast('Error removing document');}
+}
+</script>
+</body>
+</html>
